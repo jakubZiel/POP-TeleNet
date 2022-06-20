@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List, TypeVar
 from xml.etree import ElementTree
 
-from data_model import AdmissablePaths, Demand, Link
+from data_model import AdmissablePath, Demand, Link
 
 T = TypeVar("T")
 
@@ -36,14 +36,17 @@ class NetworkParser:
     def demands(self) -> List[Demand]:
         demand_list: List[Demand] = []
         for demand in self.xml.findall(".//ns:demand", NS):
-            admissable_paths: List[List[str]] = []
+            admissable_paths: List[AdmissablePath] = []
             for admissable_path in demand.findall(".//ns:admissiblePath", NS):
                 admissable_paths.append(
-                    [unwrap(x.text) for x in admissable_path.findall("ns:linkId", NS)]
+                    AdmissablePath(
+                        [
+                            unwrap(x.text)
+                            for x in admissable_path.findall("ns:linkId", NS)
+                        ]
+                    )
                 )
             id = demand.attrib["id"]
             demand_value = unwrap(unwrap(demand.find("ns:demandValue", NS)).text)
-            demand_list.append(
-                Demand(id, float(demand_value), AdmissablePaths(admissable_paths))
-            )
+            demand_list.append(Demand(id, float(demand_value), admissable_paths))
         return demand_list
